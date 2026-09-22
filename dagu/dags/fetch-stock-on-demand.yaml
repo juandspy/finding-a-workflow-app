@@ -1,0 +1,15 @@
+params:
+  - TICKER: "AAPL"
+
+steps:
+  - id: fetch
+    run: /var/lib/dagu/scripts/fetch_stock.sh "${params.TICKER}"
+
+handler_on:
+  failure:
+    run: |
+      if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
+        curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+          -d chat_id="${TELEGRAM_CHAT_ID}" \
+          -d text="DAG ${DAG_NAME} run ${DAG_RUN_ID} FAILED"
+      fi

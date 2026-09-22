@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.findingaworkflow.fetch-TICKER</string>
+
+	<!-- Absolute paths required. Replace YOUR_USER, TICKER, and verify python3 path. -->
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/bash</string>
+		<string>/Users/YOUR_USER/Projects/learning/finding-a-workflow-app/launchd/stamp_exec.sh</string>
+		<string>/usr/bin/python3</string>
+		<string>/Users/YOUR_USER/Projects/learning/finding-a-workflow-app/launchd/runner.py</string>
+		<string>--name</string>
+		<string>fetch-TICKER</string>
+		<string>--</string>
+		<string>/usr/bin/python3</string>
+		<string>/Users/YOUR_USER/Projects/learning/finding-a-workflow-app/launchd/jobs/fetch_stocks.py</string>
+		<string>TICKER</string>
+	</array>
+
+	<key>WorkingDirectory</key>
+	<string>/Users/YOUR_USER/Projects/learning/finding-a-workflow-app/launchd</string>
+
+	<!-- Every 5 minutes. -->
+	<key>StartInterval</key>
+	<integer>300</integer>
+
+	<!-- Or calendar schedule:
+	<key>StartCalendarInterval</key>
+	<dict>
+		<key>Weekday</key><integer>0</integer>
+		<key>Hour</key><integer>8</integer>
+		<key>Minute</key><integer>0</integer>
+	</dict>
+	-->
+
+	<key>StandardOutPath</key>
+	<string>/Users/YOUR_USER/Projects/learning/finding-a-workflow-app/launchd/data/launchd-fetch-TICKER.out.log</string>
+	<key>StandardErrorPath</key>
+	<string>/Users/YOUR_USER/Projects/learning/finding-a-workflow-app/launchd/data/launchd-fetch-TICKER.err.log</string>
+
+	<key>RunAtLoad</key>
+	<false/>
+</dict>
+</plist>

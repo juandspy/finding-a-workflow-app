@@ -1,0 +1,38 @@
+# Podman Compose: podman compose up -d  (or: podman-compose up -d)
+services:
+  temporal:
+    image: docker.io/temporalio/temporal:latest
+    container_name: finding-a-workflow-temporal
+    command: server start-dev --ip 0.0.0.0 --db-filename /data/temporal.db
+    restart: unless-stopped
+    ports:
+      - "7233:7233" # gRPC front-end (worker + CLI)
+      - "8233:8233" # Web UI
+    volumes:
+      - temporal_data:/data
+    healthcheck:
+      test: ["CMD", "temporal", "operator", "cluster", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  worker:
+    image: docker.io/library/python:3.12-slim
+    container_name: finding-a-workflow-temporal-worker
+    working_dir: /app
+    command: sh -c "pip install --no-cache-dir -q -r requirements.txt && python worker.py"
+    restart: unless-stopped
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+    volumes:
+      - ./:/app:ro
+    depends_on:
+      temporal:
+        condition: service_healthy
+
+volumes:
+  temporal_data:
+    external: true
+    name: finding-a-workflow-temporal-data

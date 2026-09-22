@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>launchd runs</title>
+  <style>
+    :root {
+      --bg: #f6f5f2;
+      --fg: #1a1a1a;
+      --muted: #5c5c5c;
+      --line: #d8d5ce;
+      --ok: #1a7a3c;
+      --fail: #b42318;
+      --hover: #eceae4;
+      --accent: #1f4e79;
+      --mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+      --sans: "IBM Plex Sans", "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      color: var(--fg);
+      background:
+        radial-gradient(ellipse 80% 50% at 10% -10%, #e8efe8 0%, transparent 55%),
+        radial-gradient(ellipse 60% 40% at 100% 0%, #e4ebf2 0%, transparent 50%),
+        var(--bg);
+      min-height: 100vh;
+      line-height: 1.45;
+    }
+
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 3rem;
+    }
+
+    header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    h2 {
+      margin: 0 0 0.75rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .muted { color: var(--muted); font-size: 0.9rem; }
+
+    button, .linkish {
+      font: inherit;
+      cursor: pointer;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--fg);
+      padding: 0.35rem 0.75rem;
+      border-radius: 4px;
+    }
+
+    button:hover, .linkish:hover { background: var(--hover); }
+
+    .linkish {
+      display: inline-block;
+      text-decoration: none;
+      margin-bottom: 1rem;
+    }
+
+    .error {
+      color: var(--fail);
+      background: #fdecea;
+      border: 1px solid #f5c2c0;
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 0.55rem 0.65rem;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+
+    th {
+      font-weight: 600;
+      color: var(--muted);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* ~header + 5 body rows; keeps the log panel on-screen */
+    .table-scroll {
+      max-height: calc(2.15rem + 5 * 2.45rem);
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: #fff;
+    }
+
+    .table-scroll thead th {
+      position: sticky;
+      top: 0;
+      background: #fff;
+      box-shadow: 0 1px 0 var(--line);
+      z-index: 1;
+    }
+
+    tbody tr { cursor: pointer; }
+    tbody tr:hover { background: var(--hover); }
+    tbody tr.selected { background: #e3ebf3; }
+
+    .status {
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    .status.ok { color: var(--ok); }
+    .status.fail { color: var(--fail); }
+
+    .cmd {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--muted);
+      max-width: 18rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    #log-panel {
+      margin-top: 1.25rem;
+      display: none;
+    }
+
+    #log-panel.visible { display: block; }
+
+    #log-meta {
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    #log-body {
+      margin: 0;
+      padding: 1rem;
+      background: #1e1f22;
+      color: #e8e8e8;
+      border-radius: 4px;
+      overflow: auto;
+      max-height: 50vh;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .empty {
+      color: var(--muted);
+      padding: 1.5rem 0;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>launchd runs</h1>
+        <p class="muted" id="subtitle">Loading…</p>
+      </div>
+      <button type="button" id="refresh">Refresh</button>
+    </header>
+
+    <div id="error" class="error" hidden></div>
+
+    <section id="jobs-view"></section>
+    <section id="runs-view" hidden></section>
+  </main>
+
+  <script>
+    const RUNS_URL = "/data/runs.jsonl";
+
+    const el = {
+      error: document.getElementById("error"),
+      subtitle: document.getElementById("subtitle"),
+      jobsView: document.getElementById("jobs-view"),
+      runsView: document.getElementById("runs-view"),
+      refresh: document.getElementById("refresh"),
+    };
+
+    /** @type {{ name: string, started: string, finished: string, exit_code: number, log: string, cmd: string[] }[]} */
+    let allRuns = [];
+    let selectedJob = null;
+
+    function showError(msg) {
+      el.error.hidden = !msg;
+      el.error.textContent = msg || "";
+    }
+
+    function parseJsonl(text) {
+      const runs = [];
+      for (const line of text.split("\n")) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        try {
+          runs.push(JSON.parse(trimmed));
+        } catch {
+          /* skip bad lines */
+        }
+      }
+      return runs;
+    }
+
+    function fmtTime(iso) {
+      if (!iso) return "—";
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return iso;
+      return d.toLocaleString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+    }
+
+    function durationSec(started, finished) {
+      const a = new Date(started).getTime();
+      const b = new Date(finished).getTime();
+      if (Number.isNaN(a) || Number.isNaN(b)) return "—";
+      return `${((b - a) / 1000).toFixed(1)}s`;
+    }
+
+    function statusClass(code) {
+      return code === 0 ? "ok" : "fail";
+    }
+
+    function statusLabel(code) {
+      return code === 0 ? "OK" : "FAIL";
+    }
+
+    function jobsSummary(runs) {
+      /** @type {Map<string, typeof runs>} */
+      const byName = new Map();
+      for (const r of runs) {
+        const name = r.name || "(unnamed)";
+        if (!byName.has(name)) byName.set(name, []);
+        byName.get(name).push(r);
+      }
+      return [...byName.entries()]
+        .map(([name, jobRuns]) => {
+          const sorted = [...jobRuns].sort(
+            (a, b) => new Date(b.finished) - new Date(a.finished)
+          );
+          return { name, runs: sorted, last: sorted[0] };
+        })
+        .sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    function renderJobs() {
+      selectedJob = null;
+      el.jobsView.hidden = false;
+      el.runsView.hidden = true;
+
+      const jobs = jobsSummary(allRuns);
+      el.subtitle.textContent = `${jobs.length} job${jobs.length === 1 ? "" : "s"} · ${allRuns.length} run${allRuns.length === 1 ? "" : "s"}`;
+
+      if (!jobs.length) {
+        el.jobsView.innerHTML = `<p class="empty">No runs yet. Run <code>runner.py</code> first.</p>`;
+        return;
+      }
+
+      el.jobsView.innerHTML = `
+        <h2>Jobs</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Job</th>
+              <th>Last run</th>
+              <th>Health</th>
+              <th>Runs</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${jobs
+              .map(
+                (j) => `
+              <tr data-job="${escapeAttr(j.name)}">
+                <td>${escapeHtml(j.name)}</td>
+                <td>${escapeHtml(fmtTime(j.last.finished))}</td>
+                <td><span class="status ${statusClass(j.last.exit_code)}">${statusLabel(j.last.exit_code)} <span class="muted">(exit ${j.last.exit_code})</span></span></td>
+                <td>${j.runs.length}</td>
+              </tr>`
+              )
+              .join("")}
+          </tbody>
+        </table>
+      `;
+
+      el.jobsView.querySelectorAll("tbody tr").forEach((tr) => {
+        tr.addEventListener("click", () => {
+          renderRuns(tr.getAttribute("data-job"));
+        });
+      });
+    }
+
+    function renderRuns(jobName) {
+      selectedJob = jobName;
+      el.jobsView.hidden = true;
+      el.runsView.hidden = false;
+
+      const runs = allRuns
+        .filter((r) => (r.name || "(unnamed)") === jobName)
+        .sort((a, b) => new Date(b.finished) - new Date(a.finished));
+
+      el.subtitle.textContent = `${jobName} · ${runs.length} run${runs.length === 1 ? "" : "s"}`;
+
+      el.runsView.innerHTML = `
+        <button type="button" class="linkish" id="back">← All jobs</button>
+        <h2>${escapeHtml(jobName)}</h2>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Started</th>
+                <th>Finished</th>
+                <th>Duration</th>
+                <th>Exit</th>
+                <th>Command</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${runs
+                .map(
+                  (r, i) => `
+                <tr data-idx="${i}">
+                  <td>${escapeHtml(fmtTime(r.started))}</td>
+                  <td>${escapeHtml(fmtTime(r.finished))}</td>
+                  <td>${escapeHtml(durationSec(r.started, r.finished))}</td>
+                  <td><span class="status ${statusClass(r.exit_code)}">${r.exit_code}</span></td>
+                  <td><div class="cmd" title="${escapeAttr((r.cmd || []).join(" "))}">${escapeHtml((r.cmd || []).join(" "))}</div></td>
+                </tr>`
+                )
+                .join("")}
+            </tbody>
+          </table>
+        </div>
+        <div id="log-panel">
+          <div id="log-meta" class="muted"></div>
+          <pre id="log-body"></pre>
+        </div>
+      `;
+
+      document.getElementById("back").addEventListener("click", renderJobs);
+
+      const rows = el.runsView.querySelectorAll("tbody tr");
+      rows.forEach((tr) => {
+        tr.addEventListener("click", async () => {
+          rows.forEach((r) => r.classList.remove("selected"));
+          tr.classList.add("selected");
+          const run = runs[Number(tr.getAttribute("data-idx"))];
+          await showLog(run);
+        });
+      });
+    }
+
+    async function showLog(run) {
+      const panel = document.getElementById("log-panel");
+      const meta = document.getElementById("log-meta");
+      const body = document.getElementById("log-body");
+      panel.classList.add("visible");
+
+      const path = run.log.startsWith("/") ? run.log : `/${run.log}`;
+      meta.textContent = `Log: ${run.log}`;
+      body.textContent = "Loading…";
+
+      try {
+        const res = await fetch(path);
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+        body.textContent = await res.text();
+      } catch (err) {
+        body.textContent = `Failed to load log: ${err.message}\n\nServe from the launchd/ directory (python3 -m http.server).`;
+      }
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function escapeAttr(s) {
+      return escapeHtml(s).replace(/'/g, "&#39;");
+    }
+
+    async function load() {
+      showError("");
+      el.subtitle.textContent = "Loading…";
+      try {
+        const res = await fetch(RUNS_URL + "?t=" + Date.now());
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+        allRuns = parseJsonl(await res.text());
+        if (selectedJob) renderRuns(selectedJob);
+        else renderJobs();
+      } catch (err) {
+        allRuns = [];
+        el.jobsView.innerHTML = "";
+        el.runsView.hidden = true;
+        el.jobsView.hidden = false;
+        el.subtitle.textContent = "Could not load runs";
+        showError(
+          `Failed to fetch ${RUNS_URL}: ${err.message}. ` +
+            `From launchd/: python3 -m http.server 8765 then open http://localhost:8765/viewer/`
+        );
+      }
+    }
+
+    el.refresh.addEventListener("click", load);
+    load();
+  </script>
+</body>
+</html>

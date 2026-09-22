@@ -1,0 +1,31 @@
+# Podman Compose: podman compose up -d  (or: podman-compose up -d)
+services:
+  n8n:
+    image: docker.io/n8nio/n8n:latest
+    container_name: finding-a-workflow-n8n
+    restart: unless-stopped
+    ports:
+      - "${N8N_PORT:-5678}:5678"
+    environment:
+      - N8N_HOST=${N8N_HOST:-localhost}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=${N8N_PROTOCOL:-http}
+      - WEBHOOK_URL=${WEBHOOK_URL:-http://localhost:5678/}
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE:-Europe/Madrid}
+      - TZ=${GENERIC_TIMEZONE:-Europe/Madrid}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+      # Allow $env.TELEGRAM_* in HTTP Request expressions (blocked by default in n8n 2.x).
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
+      - N8N_EXPRESSIONS_ALLOWED_ENV_VARS=TELEGRAM_BOT_TOKEN,TELEGRAM_CHAT_ID
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+    volumes:
+      # Named volume avoids SQLITE_IOERR from SQLite WAL on macOS bind mounts (Podman virtiofs).
+      - n8n_data:/home/node/.n8n
+      - ./workflows:/workflows:ro
+
+volumes:
+  n8n_data:
+    external: true
+    name: finding-a-workflow-n8n-data

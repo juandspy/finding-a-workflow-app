@@ -1,0 +1,6 @@
+.env
+data/
+*.pyc
+__pycache__/
+*.plist
+!plists/*.example

@@ -1,0 +1,71 @@
+# --- Secrets & local config ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+*secret*
+*credentials*
+
+# --- Runtime / local data (logs, DBs, volumes) ---
+**/data/
+*.sqlite
+*.sqlite-journal
+*.db
+*.log
+*.jsonl
+*.pid
+
+# dagu runtime index
+**/.dag.index
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+.env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- Node (if added later) ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- Containers / local tooling ---
+.podman/
+docker-compose.override.yml
+compose.override.yml
+
+# --- launchd: keep only example plists ---
+*.plist
+!**/plists/*.example
+
+# --- OS ---
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+Desktop.ini
+
+# --- Editors / AI tooling (local) ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.claude/
+.cursor/

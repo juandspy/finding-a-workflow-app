@@ -1,0 +1,28 @@
+# Podman Compose: podman compose up -d  (or: podman-compose up -d)
+services:
+  dagu:
+    image: ghcr.io/dagucloud/dagu:latest
+    container_name: finding-a-workflow-dagu
+    restart: unless-stopped
+    entrypoint: ["/usr/local/bin/tini", "-g", "--"]
+    command: ["dagu", "start-all"]
+    ports:
+      - "8080:8080"
+    environment:
+      - DAGU_HOST=0.0.0.0
+      - DAGU_PORT=8080
+      - DAGU_DAGS_DIR=/var/lib/dagu/dags
+      - DAGU_TZ=${GENERIC_TIMEZONE:-Europe/Madrid}
+      - DAGU_AUTH_MODE=none
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+    volumes:
+      - dagu_data:/var/lib/dagu
+      - ./dags:/var/lib/dagu/dags
+      - ./scripts:/var/lib/dagu/scripts:ro
+    user: "0:0"
+
+volumes:
+  dagu_data:
+    external: true
+    name: finding-a-workflow-dagu-data

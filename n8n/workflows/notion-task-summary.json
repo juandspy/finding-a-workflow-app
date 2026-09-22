@@ -1,0 +1,195 @@
+{
+  "id": "G3YRSlkCJH2CLQJm",
+  "name": "Notion task summary",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "dataSourceId": {
+          "__rl": true,
+          "value": "1ece89c0-1ddc-4e6b-887e-efa3fe1d2181",
+          "mode": "list",
+          "cachedResultName": "All Tasks",
+          "cachedResultUrl": "https://app.notion.com/p/d90b6a371a0a4dc887dd806a89e9e62b"
+        }
+      },
+      "type": "n8n-nodes-base.notionTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a4d4e9d3-a98f-4e28-a890-3feee069a4a8",
+      "name": "Notion Trigger",
+      "credentials": {
+        "notionApi": {
+          "id": "TMPaCOAuuQDomplf",
+          "name": "Notion account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "getMarkdown",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        }
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        224,
+        -16
+      ],
+      "id": "b1c2d3e4-f5a6-4789-b012-3456789abcde",
+      "name": "Get Page Markdown",
+      "credentials": {
+        "notionApi": {
+          "id": "TMPaCOAuuQDomplf",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Summarize this Notion task in Spanish (2-3 sentences).\n\n## Properties\n{{ JSON.stringify($('Notion Trigger').item.json, null, 2) }}\n\n## Page content\n{{ $json.markdown || '(empty)' }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        400,
+        -16
+      ],
+      "id": "3f82fc41-442c-45a5-8319-061399e53a6c",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ chat_id: $env.TELEGRAM_CHAT_ID, text: 'n8n job FAIL: ' + $workflow.name + '\\nNotion trigger error', disable_web_page_preview: true }) }}",
+        "options": {}
+      },
+      "id": "722ae10d-0feb-41fc-a7f1-afe0c026e9bf",
+      "name": "Notify Telegram",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "model": "deepseek/deepseek-v4-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        320,
+        272
+      ],
+      "id": "d85e521b-49bb-4f2d-8091-9405244c552e",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "DHJOxBBdhErhsSqZ",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ chat_id: $env.TELEGRAM_CHAT_ID, text: $workflow.name + ': ' + $json.output, disable_web_page_preview: true }) }}",
+        "options": {}
+      },
+      "id": "04758fa4-48fe-4726-8990-13da1b59d964",
+      "name": "Notify Telegram1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        624,
+        -16
+      ]
+    }
+  ],
+  "connections": {
+    "Notion Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Page Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Page Markdown": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Notify Telegram1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "pinData": {},
+  "versionId": "186b7b4e-8d9f-4c99-893f-8875f67fff20",
+  "tags": []
+}
