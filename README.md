@@ -131,10 +131,12 @@ Of the three self-hosted options this is the lightest: one container, one binary
 
 ## Resources
 
-- Launchd: just when running the scripts, no additional process.
-- Temporal: ~250MB process, ~300MB the whole container.
-- n8n: ~500MB process, ~700MB the whole container.
-- Dagu: ~250MB process, ~550MB the whole container.
+| Tool     | Process Memory        | Container Memory |
+|----------|-----------------------|------------------|
+| Launchd  | No additional process | N/A              |
+| Temporal | ~250MB                | ~300MB           |
+| n8n      | ~500MB                | ~700MB           |
+| Dagu     | ~250MB                | ~550MB           |
 
 ## Summary
 
