@@ -78,7 +78,7 @@ See [`n8n/`](./n8n/) for a Podman setup with two starter workflows (cron stock f
 I was really impressed by the execution time:
 
 ```sh
-❯ time curl -s -X POST http://localhost:5678/webhook/fetch-stock-on-demand \
+❯ time curl -s -X POST http://localhost:5678/webhook/fetch-stock \
   -H 'Content-Type: application/json' \
   -d '{"ticker":"IBM"}'
 {"ok":true,"exit_code":0,"job_name":"fetch-IBM","ticker":"IBM","symbol":"IBM","price":234.71,"output":"IBM=234.71"}

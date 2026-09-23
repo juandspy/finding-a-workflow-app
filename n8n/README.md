@@ -7,12 +7,13 @@ Self-hosted [n8n](https://n8n.io/) via **Podman**, mirroring the launchd stock-f
 | `fetch-stock-cron-aapl` | `fetch-aapl` plist | every 5 minutes |
 | `fetch-stock-on-demand` | `runner.py --name fetch-aapl -- … AAPL` | webhook `POST /webhook/fetch-stock` |
 | `fetch-stock-form` | same, via UI | form (Execute workflow → enter ticker) |
+| `notion-task-summary` | same, via UI | form (Execute workflow → takes the latest task created in Notion) |
 
 n8n does not allow **Form Trigger** and **Respond to Webhook** in the same workflow, so the UI form is a separate workflow from the webhook API.
 
 Telegram failure alerts use the same env vars as launchd (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`).
 
-Agentic workflows are **not** included — that's for you to build in the UI.
+![Notion task summary](images/notion-task-summary.png)
 
 ## Layout
 
