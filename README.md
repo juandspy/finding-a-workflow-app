@@ -16,7 +16,7 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    A((👆)) -->|var "payslip: 2026_06.pdf"| B[Parse payslip]
+    A((👆)) -->|"var payslip: 2026_06.pdf"| B[Parse payslip]
     B --> C[Insert data into database]
     C --> D[Send report]
 ```
