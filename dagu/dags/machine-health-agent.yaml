@@ -1,0 +1,40 @@
+type: agent
+
+secrets:
+  - name: OPENROUTER_API_KEY
+    provider: env
+    key: OPENROUTER_API_KEY
+
+llm:
+  provider: openrouter
+  model: deepseek/deepseek-v4-flash
+
+steps:
+  - id: disk
+    description: Show filesystem usage.
+    run: df -h
+    output: DISK
+
+  - id: load
+    description: Show uptime and load average.
+    run: uptime
+    output: LOAD
+
+  - id: processes
+    description: List processes with CPU and memory usage.
+    run: ps aux | head -20
+
+  - id: summarize
+    description: Write the health summary. Run last, after the checks.
+    action: chat.completion
+    with:
+      prompt: |
+        Summarize this machine's health in three sentences:
+        ${DISK}
+        ${LOAD}
+
+tasks:
+  - name: triage
+    description: >
+      Finished when the machine has been checked and a health summary has been
+      written. Inspect processes only if disk or load looks unhealthy.

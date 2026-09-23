@@ -16,6 +16,7 @@ services:
       - DAGU_AUTH_MODE=none
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
     volumes:
       - dagu_data:/var/lib/dagu
       - ./dags:/var/lib/dagu/dags

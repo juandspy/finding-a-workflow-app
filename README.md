@@ -48,7 +48,7 @@ Some basic features I want to cover are:
 | **systemd/launchd** (customized)                                |       | ✅         | ✅       | ⚒️        | ❌                | ❌               | ⚒️         | ⚒️         | ⚒️            |
 | **[n8n](https://github.com/n8n-io/n8n)**                        | 198K  | ✅         | ✅       | ✅        | ✅                | ❌               | ✅         | ✅         | ✅            |
 | **[Temporal](https://github.com/temporalio/temporal)**          | 22K   | ✅         | ✅       | ✅        | ⚒️                | ✅               | ✅         | ✅         | ⚒️            |
-| **[dagu](https://github.com/dagucloud/dagu)**                   | 4K    | ✅         | ✅       | ✅        | ⚒️                | ✅               | ✅         | ✅         | ⚒️            |
+| **[dagu](https://github.com/dagucloud/dagu)**                   | 4K    | ✅         | ✅       | ✅        | ✅                | ✅               | ✅         | ✅         | ⚒️            |
 
 \*Stars at 2026-07-24.
 
@@ -114,7 +114,7 @@ Agentic workflows aren't a first-class concept, you may need to write it yoursel
 
 ### dagu
 
-See [`dagu/`](./dagu/) for a single-container Podman setup (no DB, no separate worker process) with a cron DAG and an on-demand DAG, both running the same `fetch_stock.sh` (curl + jq, no Python needed).
+See [`dagu/`](./dagu/) for a single-container Podman setup (no DB, no separate worker process) with a cron DAG, an on-demand DAG, and an Agent DAG (`type: agent`) that uses OpenRouter to triage machine health and write a summary.
 
 Like Temporal, offline catch-up is real — set a `catchup_window` on the cron DAG and a missed tick actually runs when the server comes back, instead of being silently dropped like n8n/launchd. It even fired a catch-up run on the very first start, before the schedule had ticked once.
 
