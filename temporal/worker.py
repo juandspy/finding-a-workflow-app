@@ -9,6 +9,11 @@ from temporalio.client import Client
 from temporalio.worker import Worker
 
 from workflows.fetch_stock import FetchStockWorkflow, fetch_quote, notify_telegram
+from workflows.notion_task_summary import (
+    NotionTaskSummaryWorkflow,
+    fetch_notion_markdown,
+    summarize_openrouter,
+)
 
 TASK_QUEUE = "stock-tasks"
 
@@ -19,8 +24,13 @@ async def main() -> None:
     worker = Worker(
         client,
         task_queue=TASK_QUEUE,
-        workflows=[FetchStockWorkflow],
-        activities=[fetch_quote, notify_telegram],
+        workflows=[FetchStockWorkflow, NotionTaskSummaryWorkflow],
+        activities=[
+            fetch_quote,
+            notify_telegram,
+            fetch_notion_markdown,
+            summarize_openrouter,
+        ],
     )
     print(f"Worker started, connected to {address}, task queue '{TASK_QUEUE}'")
     await worker.run()

@@ -26,6 +26,8 @@ services:
       - TEMPORAL_ADDRESS=temporal:7233
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+      - NOTION_TOKEN=${NOTION_TOKEN:-}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
     volumes:
       - ./:/app:ro
     depends_on:

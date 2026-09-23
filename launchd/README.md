@@ -52,6 +52,8 @@ launchd/
    copy them into LaunchAgents (or start from `fetch-ticker.plist.example`):
 
    ```bash
+   mkdir -p ~/Library/LaunchAgents
+   
    cp plists/com.findingaworkflow.fetch-stocks.plist.example \
      ~/Library/LaunchAgents/com.findingaworkflow.fetch-stocks.plist
    # edit absolute paths in that plist

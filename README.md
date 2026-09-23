@@ -110,7 +110,7 @@ There's no visual editor and no webhook trigger — everything is Python code, a
 
 It's as fast as n8n.
 
-Agentic workflows aren't a first-class concept, you may need to write it yourself.
+Agentic workflows aren't a first-class concept — the PoC adds one as plain Python: `NotionTaskSummaryWorkflow` (Notion page → OpenRouter Spanish summary), started via `scripts/run-notion-summary.sh`.
 
 ### dagu
 
@@ -128,6 +128,13 @@ dag: fetch-stock-on-demand (0s)
 ```
 
 Of the three self-hosted options this is the lightest: one container, one binary, `dags/*.yaml` picked up live with no import step. No visual editor and no webhook trigger (same as Temporal — the on-demand script shells into the container's CLI), though dagu does expose a REST API (`POST /api/v1/dags/{file}/start`) if you want a real HTTP trigger.
+
+## Resources
+
+- Launchd: just when running the scripts, no additional process.
+- Temporal: ~250MB process, ~300MB the whole container.
+- n8n: ~500MB process, ~700MB the whole container.
+- Dagu: ~250MB process, ~550MB the whole container.
 
 ## Summary
 
